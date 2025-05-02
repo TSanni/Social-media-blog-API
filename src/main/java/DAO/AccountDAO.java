@@ -3,6 +3,7 @@ package DAO;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 
 import Model.Account;
 import Util.ConnectionUtil;
@@ -26,15 +27,16 @@ public class AccountDAO {
             }
 
             // Step 2: Insert new account
-            account.setAccount_id(2); // TODO: WILL MOST LIKELY HAVE TO FIX
-            String insertSql = "INSERT INTO account (account_id, username, password) VALUES (?, ?, ?)";
-            PreparedStatement insertStmt = connection.prepareStatement(insertSql);
-            insertStmt.setInt(1, account.getAccount_id());
-            insertStmt.setString(2, account.getUsername());
-            insertStmt.setString(3, account.getPassword());
-
-            insertStmt.executeUpdate();
-            return account;
+            String insertSql = "INSERT INTO account (username, password) VALUES (?, ?)";
+            try (PreparedStatement insertStmt = connection.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                insertStmt.setString(1, account.getUsername());
+                insertStmt.setString(2, account.getPassword());
+                insertStmt.executeUpdate();
+    
+                ResultSet keys = insertStmt.getGeneratedKeys();
+                if (keys.next()) account.setAccount_id(keys.getInt(1));
+                return account;
+            }
 
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
